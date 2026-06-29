@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio Lógico | AsyncX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-image: url('background.webp');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #09090b;
+            min-height: 100vh;
+            color: #e4e4e7;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass-panel {
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn-tech {
+            background-color: #2563eb;
+            transition: all 0.2s ease;
+        }
+        .btn-tech:hover {
+            background-color: #1d4ed8;
+            box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <div class="fixed inset-0 bg-black/40 z-0"></div>
+
+    <div class="glass-panel w-full max-w-2xl rounded-xl p-8 md:p-12 relative z-10 overflow-hidden">
+        <div class="absolute top-0 left-0 h-1 bg-gray-800 w-full">
+            <div id="progressBar" class="h-full bg-blue-500 transition-all duration-300" style="width: 10%;"></div>
+        </div>
+
+        <div class="text-left mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-1 text-white">
+                Verificação de Acesso
+            </h1>
+            <p class="text-gray-400 font-mono text-sm">Status: <span class="text-yellow-400">Aguardando Validação de 10 Etapas</span></p>
+        </div>
+
+        <div id="questionContainer" class="min-h-[140px] flex flex-col justify-center">
+            <h2 id="questionText" class="text-lg md:text-xl text-gray-200 mb-6 leading-relaxed">
+                Inicializando sistema...
+            </h2>
+            
+            <input type="text" id="answerInput" placeholder="Insira a resposta..." autocomplete="off"
+                class="w-full font-mono bg-gray-900 border border-gray-600 rounded p-4 text-left text-lg text-green-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner">
+        </div>
+
+        <div class="mt-8 flex justify-between items-center">
+            <span class="text-xs text-gray-500 font-mono" id="stepCounter">Etapa 1/10</span>
+            <button onclick="nextStep()" class="btn-tech text-white font-medium py-2 px-6 rounded tracking-wide text-sm">
+                Enviar
+            </button>
+        </div>
+    </div>
+
+    <script>
+
+        const BAU_CRIPTOGRAFADO = "U2FsdGVkX1/E6Sgu0cbsXYR7fpM0wZOO6ZgJBbP54lbnagZZLypnWOOpC1DvCJ9n"; 
+
+        const questions = [
+            "Qual é a sequência numérica que representa a quantidade de lados das seguintes formas: Quadrado, Triângulo, Octógono?",
+            "Analisando a sequência de Fibonacci (1, 1, 2, 3, 5, 8, 13...), qual é o próximo número da sequência?",
+            "Converta o seguinte byte binário para a sua representação decimal: 0001010.",
+            "Um processo iniciou às 10:00 e executou ininterruptamente por exatamente 43 horas. Qual a parte INTEIRA da hora que ele terminou no formato de 12 horas?",
+            "Em sistemas baseados em Unix/Linux, qual é o caractere único utilizado para referenciar o diretório atual em caminhos relativos?",
+            "Dadas as variáveis booleanas A = Verdadeiro (1) e B = Falso (0). Qual é o resultado numérico da operação: (A AND B) XOR A ?",
+            "Qual é a porta TCP padrão utilizada para tráfego web seguro e criptografado (HTTPS)?",
+            "Na tabela ASCII, qual é a letra maiúscula que é representada pelo valor decimal 67?",
+            "Uma sub-rede IPv4 possui a máscara 255.255.255.240/28. Excluindo o endereço de rede e o de broadcast, qual é o número exato de IPs úteis disponíveis para hosts?",
+            "Qual é o código de status HTTP padrão retornado por um servidor quando o recurso solicitado não é encontrado?"
+        ];
+
+        let currentIndex = 0;
+        let userAnswers = [];
+
+        const questionText = document.getElementById('questionText');
+        const answerInput = document.getElementById('answerInput');
+        const progressBar = document.getElementById('progressBar');
+        const stepCounter = document.getElementById('stepCounter');
+
+        function loadQuestion() {
+            questionText.innerText = questions[currentIndex];
+            answerInput.value = "";
+            answerInput.focus();
+            progressBar.style.width = ((currentIndex + 1) / questions.length) * 100 + '%';
+            stepCounter.innerText = `Etapa ${currentIndex + 1}/${questions.length}`;
+        }
+
+        function nextStep() {
+            let answer = answerInput.value.trim().toUpperCase();
+            if(answer === "") return;
+
+            userAnswers.push(answer);
+            currentIndex++;
+
+            if(currentIndex < questions.length) {
+                loadQuestion();
+            } else {
+                validateVault();
+            }
+        }
+
+        answerInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                nextStep();
+            }
+        });
+
+        function validateVault() {
+            let chaveMestra = userAnswers.join('');
+
+            try {
+                let bytes = CryptoJS.AES.decrypt(BAU_CRIPTOGRAFADO, chaveMestra);
+                let textResult = bytes.toString(CryptoJS.enc.Utf8);
+
+                if(textResult.startsWith("VALID_KEY_")) {
+                    let finalFlag = textResult.replace("VALID_KEY_", "");
+                    
+                    Swal.fire({
+                        title: 'Acesso Autorizado',
+                        html: `<p class="text-gray-300 mb-4 text-sm">A sua assinatura criptográfica foi validada. A Flag final é:</p><div class="bg-black p-4 rounded text-green-400 font-mono text-xl border border-green-500/30">${finalFlag}</div>`,
+                        icon: 'success',
+                        background: '#0a0a0f',
+                        color: '#fff',
+                        confirmButtonColor: '#2563eb',
+                        allowOutsideClick: false
+                    }).then(() => {
+                        window.location.reload(); 
+                    });
+                } else {
+                    triggerError();
+                }
+            } catch(e) {
+                triggerError();
+            }
+        }
+
+        function triggerError() {
+            Swal.fire({
+                title: 'Acesso Negado',
+                text: 'Falha na validação de integridade. Um ou mais valores inseridos estão incorretos.',
+                icon: 'error',
+                background: '#0a0a0f',
+                color: '#fff',
+                confirmButtonColor: '#dc2626'
+            }).then(() => {
+                currentIndex = 0;
+                userAnswers = [];
+                loadQuestion();
+            });
+        }
+        loadQuestion();
+    </script>
+</body>
+</html>
