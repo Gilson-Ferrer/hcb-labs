@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW MARKET | Cyberware de Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        /* Fonte elegante e futurista */
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap');
+        
+        body { 
+            background-color: #050505; 
+            color: #f4f4f5; 
+            font-family: 'Rajdhani', sans-serif; 
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1e1e2f 0%, #050505 60%);
+            background-attachment: fixed;
+        }
+
+        /* Efeito de Vidro (Glassmorphism) */
+        .glass {
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Cartões Flutuantes com Brilho */
+        .premium-card {
+            background: linear-gradient(145deg, rgba(30,30,40,0.8) 0%, rgba(15,15,20,0.8) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .premium-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 15px 30px -10px rgba(6, 182, 212, 0.3);
+        }
+
+        /* Zoom suave na imagem do cartão */
+        .img-container { overflow: hidden; }
+        .img-container img { transition: transform 0.6s ease; }
+        .premium-card:hover .img-container img { transform: scale(1.1); }
+
+        /* Animação do Modal */
+        .modal-overlay {
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1; visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.9) translateY(20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Inputs e Botões Premium */
+        .cyber-input {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #06b6d4;
+            transition: all 0.3s;
+        }
+        .cyber-input:focus {
+            border-color: #06b6d4;
+            box-shadow: 0 0 15px rgba(6,182,212,0.2);
+            outline: none;
+        }
+        
+        .btn-glow {
+            background: linear-gradient(90deg, #0284c7, #06b6d4);
+            transition: all 0.3s;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+            filter: brightness(1.2);
+        }
+
+        /* Scrollbar Invisível */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+    </style>
+</head>
+<body class="min-h-screen pt-24 pb-12">
+
+    <nav class="fixed top-0 w-full z-40 glass px-6 py-4 flex flex-col md:flex-row justify-between items-center border-b border-white/10 shadow-lg">
+        <div class="flex items-center gap-3 mb-2 md:mb-0">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <h1 class="text-2xl font-bold tracking-widest uppercase">oBBs<span class="text-cyan-400">Market</span></h1>
+        </div>
+        <div class="flex gap-6 items-center bg-black/40 px-6 py-2 rounded-full border border-white/5">
+            <div class="text-sm flex items-center gap-2">
+                <span class="text-gray-400">SALDO:</span> 
+                <span class="text-red-400 font-bold text-lg">R$ 0,00</span>
+            </div>
+            <div class="w-px h-6 bg-white/10"></div>
+            <div class="text-sm flex items-center gap-2">
+                <span class="text-gray-400">SISTEMA:</span> 
+                <span id="clockDisplay" class="text-cyan-400 font-bold text-lg tracking-wider">00:00:00</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="w-full max-w-7xl mx-auto px-6 mb-12 text-center mt-8">
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-4" style="text-shadow: 0 0 20px rgba(255,255,255,0.1);">HARDWARE CLASSE 3</h2>
+        <p class="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">Conexões P2P criptografadas, NÃO RASTREÁVEL. Selecione o seu equipamento abaixo.</p>
+    </div>
+
+    <div class="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="catalogGrid">
+        </div>
+
+    <div id="checkoutModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="modal-content w-full max-w-5xl bg-[#0f0f14] border border-gray-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative">
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-gray-400 hover:text-white hover:bg-red-500 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <div class="w-full md:w-1/2 bg-black p-6 flex flex-col gap-4 border-r border-gray-800">
+                <div class="w-full h-64 rounded-xl overflow-hidden relative border border-gray-800 group">
+                    <img id="modalMainImg" src="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="Principal">
+                </div>
+                <div class="flex gap-4 h-24">
+                    <div class="w-1/2 rounded-lg overflow-hidden border border-gray-800"><img id="modalImg2" src="" class="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity"></div>
+                    <div class="w-1/2 rounded-lg overflow-hidden border border-gray-800"><img id="modalImg3" src="" class="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity"></div>
+                </div>
+            </div>
+
+            <div class="w-full md:w-1/2 p-8 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="bg-cyan-500/20 text-cyan-400 text-xs px-3 py-1 rounded-full font-bold uppercase border border-cyan-500/30">Em Estoque</span>
+                        <span id="modalDeckId" class="text-gray-500 text-sm font-mono">ID: 00</span>
+                    </div>
+                    <h2 id="modalTitle" class="text-3xl font-bold text-white mb-2 leading-tight">Nome do Deck</h2>
+                    <p id="modalDesc" class="text-gray-400 text-sm mb-6 leading-relaxed">Descrição...</p>
+                    
+                    <div class="bg-black/40 rounded-xl p-4 border border-white/5 mb-6">
+                        <h3 class="text-xs text-gray-500 uppercase tracking-widest mb-3 font-bold">Ficha Técnica</h3>
+                        <div id="modalSpecs" class="text-sm text-cyan-100 font-mono whitespace-pre-line leading-relaxed">Specs...</div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-gray-800 mt-4">
+                    <div class="flex justify-between items-end mb-6">
+                        <span class="text-gray-400 uppercase text-sm font-bold">Valor da Peça</span>
+                        <span id="modalPrice" class="text-3xl font-bold text-white">R$ 0,00</span>
+                    </div>
+                    
+                    <div class="mb-4 relative">
+                        <input type="text" id="couponInput" class="cyber-input w-full rounded-xl uppercase text-lg tracking-widest pl-10" placeholder="CUPOM PROMOCIONAL">
+                        <svg class="w-5 h-5 text-gray-500 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                    </div>
+
+                    <button onclick="processTransaction()" class="btn-glow w-full py-4 rounded-xl text-white font-bold text-lg uppercase tracking-wider shadow-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Finalizar Compra
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        // maquina kiroshi
+        // root: ar89ko
+        // braidshadow:tr547fa
+        // ==============================================================
+        // O HASH DO ARQUIVO .OVA
+        // ==============================================================
+        const DATABASE_HASH = "U2FsdGVkX18i8omzpWMQzd2UanFrT7gG4LtcS9uxl49K2GtcLcs6xzyFjgGZU34zQh1jjMEwfSswroW3D3ffTi70Dr87J+sNn1HLiXBybusM+KwfoeEA13DR5QEFEDB2"; 
+        const SECRET_COUPON_HASH = "0552ceb52145ca4dff3a493295dda77843cc38ea58d5e5cc941bb14b641dbcaf";
+
+        setInterval(() => {
+            document.getElementById('clockDisplay').innerText = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
+
+        const cyberdecks = [
+            { 
+                id: "deck_01", 
+                name: "Ono-Sendai Cyberspace 7", 
+                price: 45800.00, 
+                desc: "Clássico robusto. Usado por corporativos para infiltração de alto risco.", 
+                specs: "CPU: Quantum-Core v2\nRAM: 128GB Holográfica\nConexão: Direta Facial\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck1.webp",
+                imgSec1: "deckclosed1.webp", 
+                imgSec2: "dhard1.webp" 
+            },
+            { 
+                id: "deck_02", 
+                name: "Fuchi Spinel MK-III", 
+                price: 32500.00, 
+                desc: "Design elegante, eficiente contra firewalls de nível 4.", 
+                specs: "CPU: Fuchi Optic\nRAM: 64GB\nConexão: Porta USB-C Displayport\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck2.webp",
+                imgSec1: "deckclosed2.webp",
+                imgSec2: "dhard2.webp" 
+            },
+            { 
+                id: "deck_03", 
+                name: "Zetatech Microdeck", 
+                price: 22710.00, 
+                desc: "Portátil e de alto desempenho. Passa despercebido em detectores de metal aeroportuários.", 
+                specs: "CPU: Zeta-Lite\nRAM: 32GB\nConexão: Wireless Bio-Link\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck3.webp",
+                imgSec1: "deckclosed3.webp",
+                imgSec2: "dhard3.webp"
+            },
+            { 
+                id: "deck_04", 
+                name: "Arasaka 'Brain-Fryer'", 
+                price: 95000.00, 
+                desc: "Ilegal em 14 países. Possui mecanismo de limpeza com recursividade.", 
+                specs: "CPU: Arasaka Military\nRAM: 64GB\nDefesa: Calibrador Térmico\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck4.webp",
+                imgSec1: "deckclosed4.webp",
+                imgSec2: "dhard4.webp" 
+            },
+            { 
+                id: "deck_05", 
+                name: "Novatech Overdrive", 
+                price: 28900.00, 
+                desc: "Overclock de fábrica. Exige cuidado, superaquece facilmente em usos prolongados.", 
+                specs: "CPU: NovaHeat v9\nRAM: 64GB\nRefrigeração: Nitrogênio Líquido\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck5.webp",
+                imgSec1: "deckclosed5.webp",
+                imgSec2: "dhard5.webp"
+            },
+            { 
+                id: "deck_06", 
+                name: "Militech Paraline", 
+                price: 54200.00, 
+                desc: "Foco puramente militar. Defesa impenetrável contra agentes do NetWatch.", 
+                specs: "CPU: Mili-Def 4\nRAM: 1TB\nFirewall: Black-ICE integrado\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck6.webp",
+                imgSec1: "deckclosed6.webp",
+                imgSec2: "dhard6.webp"
+            },
+            { 
+                id: "deck_07", 
+                name: "Sony 'Walk-Hack' 80s", 
+                price: 31000.00, 
+                desc: "Carcaça retro de fita K7 para disfarce, mas com interior de última geração.", 
+                specs: "CPU: Retro-Q\nRAM: 48GB\nExtra: Toca fitas analógico real\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck7.webp",
+                imgSec1: "deckclosed7.webp", 
+                imgSec2: "dhard7.webp" 
+            },
+            
+            { 
+                id: "deck_08", 
+                name: "Kiroshi 'Shadow-Braid' Custom", 
+                price: 88500.00, 
+                desc: "Aparelho modificado no mercado negro. Rumores indicam que contém arquivos residuais não formatados.", 
+                specs: "CPU: Kiroshi Ghost\nRAM: 1TB\nConexão: Bypass Direto\nStatus: Usado (Sem Formatação)\nCredenciais: braidshadow:tr547fa",
+                imgFront: "deck8.webp",
+                imgSec1: "deckclosed8.webp",
+                imgSec2: "dhard8.webp"
+            },
+            
+            { 
+                id: "deck_09", 
+                name: "Raven Microcyber", 
+                price: 41200.00, 
+                desc: "Leve como uma pluma, processamento agressivo para extração rápida de dados.", 
+                specs: "CPU: Raven-X\nRAM: 128GB\nMaterial: Fibra de Carbono\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck9.webp",
+                imgSec1: "deckclosed9.webp",
+                imgSec2: "dhard9.webp"
+            },
+            { 
+                id: "deck_10", 
+                name: "Fairlight Excalibur", 
+                price: 120000.00, 
+                desc: "A lenda urbana. Capacidade de processamento baseada em nuvem.", 
+                specs: "CPU: Excalibur Prime\nRAM: Ilimitada com Cloud-link\nConexão: Wi-Fi6\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck10.webp",
+                imgSec1: "deckclosed10.webp",
+                imgSec2: "dhard10.webp"
+            },
+            { 
+                id: "deck_11", 
+                name: "Renraku Kraftwerk", 
+                price: 36700.00, 
+                desc: "Deck de engenharia industrial, adaptado nas ruas para netrunning.", 
+                specs: "CPU: Renraku Heavy\nRAM: 64GB\nChassi: Titânio reforçado\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck11.webp",
+                imgSec1: "deckclosed11.webp",
+                imgSec2: "dhard11.webp"
+            },
+            { 
+                id: "deck_12", 
+                name: "Shiawase Cyber-5", 
+                price: 29999.00, 
+                desc: "Modelo corporativo padrão desviado das fábricas. Excelente custo-benefício.", 
+                specs: "CPU: Shiawase Corp\nRAM: 32GB\nExtra: Câmera retinal integrada\nFormatado: Linux alpine\nCredenciais: admin:admin",
+                imgFront: "deck12.webp",
+                imgSec1: "deckclosed12.webp",
+                imgSec2: "dhard12.webp" 
+            }
+        ];
+
+        let selectedDeck = null;
+        let userBalance = 0.00;
+
+        function formatCurrency(val) {
+            return "R$ " + val.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+
+        const grid = document.getElementById('catalogGrid');
+        cyberdecks.forEach((deck) => {
+            const card = document.createElement('div');
+            card.className = "premium-card rounded-2xl overflow-hidden cursor-pointer group flex flex-col h-full";
+            card.onclick = () => openModal(deck);
+            
+            card.innerHTML = `
+                <div class="img-container h-48 w-full border-b border-white/5 relative">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10"></div>
+                    <span class="absolute bottom-3 left-3 z-20 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs font-bold text-gray-300 border border-white/10">${deck.id.replace('deck_', '#')}</span>
+                    <img src="${deck.imgFront}" class="w-full h-full object-cover" alt="Produto">
+                </div>
+                <div class="p-5 flex flex-col flex-grow justify-between">
+                    <div>
+                        <h3 class="text-white font-bold text-xl mb-2 group-hover:text-cyan-400 transition-colors">${deck.name}</h3>
+                        <p class="text-gray-400 text-sm line-clamp-2 leading-relaxed">${deck.desc}</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-800 flex justify-between items-center">
+                        <span class="text-lg font-bold text-white">${formatCurrency(deck.price)}</span>
+                        <span class="text-cyan-500 text-sm font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            Comprar <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+
+        const modal = document.getElementById('checkoutModal');
+        
+        function openModal(deck) {
+            selectedDeck = deck;
+
+            document.getElementById('modalTitle').innerText = deck.name;
+            document.getElementById('modalDeckId').innerText = "ID: " + deck.id.replace('deck_', '');
+            document.getElementById('modalDesc').innerText = deck.desc;
+            document.getElementById('modalSpecs').innerText = deck.specs;
+            document.getElementById('modalPrice').innerText = formatCurrency(deck.price);
+            document.getElementById('couponInput').value = ""; // Limpa o input
+            document.getElementById('modalMainImg').src = deck.imgFront;
+
+            document.getElementById('modalImg2').src = deck.imgSec1;
+            document.getElementById('modalImg3').src = deck.imgSec2;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            selectedDeck = null;
+        }
+
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) closeModal();
+        });
+
+        function processTransaction() {
+            if (!selectedDeck) return;
+
+            // 1. VERIFICAÇÃO TEMPORAL (00:00 as 03:59)
+            const hour = new Date().getHours();
+            if (hour < 0 || hour >= 4) {
+                Swal.fire({
+                    title: 'ACESSO NEGADO',
+                    text: 'Transações somente entre 00:00 e 04:00 da madrugada.',
+                    icon: 'error',
+                    background: '#0f0f14', color: '#f4f4f5', confirmButtonColor: '#0ea5e9'
+                });
+                return;
+            }
+
+            // 2. VERIFICAÇÃO DE CUPOM VIA HASH (Sem hardcode)
+            const coupon = document.getElementById('couponInput').value.trim().toUpperCase();
+            let finalPrice = selectedDeck.price;
+
+            // Os cupons públicos podem estar no código sem problemas
+            if (coupon === 'JORNAL25') finalPrice = selectedDeck.price * 0.75;
+            else if (coupon === 'JORNAL50') finalPrice = selectedDeck.price * 0.50;
+            else if (coupon === 'JORNAL75') finalPrice = selectedDeck.price * 0.25;
+            // O segredo é validado por Hash SHA-256
+            else if (CryptoJS.SHA256(coupon).toString() === SECRET_COUPON_HASH) {
+                finalPrice = 0; 
+            }
+
+            // Valida o saldo
+            if (finalPrice > userBalance) {
+                Swal.fire({
+                    title: 'SALDO INSUFICIENTE',
+                    text: `Valor do ativo - ${formatCurrency(finalPrice)}. Seu saldo é R$ 0,00.`,
+                    icon: 'warning',
+                    background: '#0f0f14', color: '#f4f4f5', confirmButtonColor: '#ef4444'
+                });
+                return;
+            }
+
+            const aesKey = selectedDeck.id + "_" + coupon;
+
+            try {
+                let bytes = CryptoJS.AES.decrypt(DATABASE_HASH, aesKey);
+                let textResult = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (textResult.startsWith("VALID_LINK_")) {
+                    let downloadLink = textResult.replace("VALID_LINK_", "");
+                    
+                    closeModal(); 
+                    Swal.fire({
+                        title: 'COMPRA EFETUADA',
+                        html: `
+                            <p class="text-sm text-left mb-4 text-gray-300">Hardware adquirido com sucesso por R$ 0,00 e enviado ao Dead Drop.</p>
+                            <div class="bg-blue-900/30 border border-blue-500/50 p-4 rounded-lg text-left">
+                                <p class="text-sm text-blue-400 mb-2 font-bold">[!] ALERTA DO SISTEMA:</p>
+                                <p class="text-xs text-gray-300">Detectamos uma partição oculta contendo uma Imagem de Disco Virtual (.OVA) não apagada pelo antigo dono.</p>
+                            </div>
+                            <a href="${downloadLink}" target="_blank" class="block w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 rounded-xl mt-6 transition-colors shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                                BAIXAR ARQUIVO FORENSE (.OVA)
+                            </a>
+                        `,
+                        icon: 'success',
+                        background: '#0f0f14', color: '#fff', showConfirmButton: false, allowOutsideClick: false
+                    });
+                } else {
+                    triggerGenericSuccess();
+                }
+            } catch(e) {
+                triggerGenericSuccess();
+            }
+        }
+
+        function triggerGenericSuccess() {
+            closeModal();
+
+            const linkMaquinaGenerica = "https://asyncx.com.br/arquivos/maquina_padrao.ova";
+
+            Swal.fire({
+                title: 'TRANSAÇÃO CONCLUÍDA',
+                html: `
+                    <p class="text-sm text-left mb-4 text-gray-300">Cyberdeck adquirido e enviado para o seu Dead Drop anônimo.</p>
+                    <div class="bg-gray-800/30 border border-gray-600/50 p-4 rounded-lg text-left">
+                        <p class="text-sm text-gray-400 mb-2 font-bold">[i] HARDWARE FORMATADO:</p>
+                        <p class="text-xs text-gray-300">O equipamento passou pelo nosso protocolo de wipe. Segue a imagem do sistema de fábrica para instalação:</p>
+                    </div>
+                    <a href="${linkMaquinaGenerica}" target="_blank" class="block w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 rounded-xl mt-6 transition-colors shadow-lg text-center">
+                        BAIXAR SISTEMA
+                    </a>
+                `,
+                icon: 'info',
+                background: '#0f0f14', 
+                color: '#f4f4f5', 
+                confirmButtonColor: '#0ea5e9',
+                showConfirmButton: true,
+                confirmButtonText: 'FECHAR'
+            });
+        }
+    </script>
+</body>
+</html>
