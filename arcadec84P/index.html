@@ -229,8 +229,12 @@
                 currentPipeSpeed = window.GamePhysics.isHacked ? window.GamePhysics.pipeSpeed : currentPipeSpeed;
                 p.x -= currentPipeSpeed;
 
-                if (bird.x + bird.width > p.x && bird.x < p.x + p.width &&
-                    (bird.y < p.top || bird.y + bird.height > canvas.height - p.bottom)) {
+                let margin = 12;
+
+                if (bird.x + bird.width - margin > p.x && 
+                    bird.x + margin < p.x + p.width &&
+                    (bird.y + margin < p.top || bird.y + bird.height - margin > canvas.height - p.bottom)) {
+                    
                     triggerGameOver();
                 }
 
