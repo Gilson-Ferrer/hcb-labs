@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos Vault | Reconstrução de Dados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { 
+            background-image: url('../assets/banner-arcadez3V1.webp');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #050505;
+            
+            color: #e4e4e7; 
+            font-family: 'Courier New', Courier, monospace; 
+            overflow-x: hidden; 
+        }
+
+        .glass-panel { 
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 255, 0.3); 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7); 
+        }
+        
+        .cyber-select { background: #000; border: 1px solid #06b6d4; color: #06b6d4; padding: 4px; outline: none; }
+        canvas { background: #000; border: 1px solid #333; }
+        
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <div class="scanlines"></div>
+
+    <div class="z-10 text-center mb-8 w-full">
+        <h1 class="text-3xl font-bold text-cyan-400 tracking-widest" style="text-shadow: 0 0 10px rgba(6, 182, 212, 0.8);">CHRONOS VAULT</h1>
+        <p class="text-gray-200 text-sm mt-2">Monte o Quebra-Cabeça e revele a senha do cofre.</p>
+    </div>
+
+    <div class="z-10 w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="glass-panel p-4 rounded-lg flex flex-col">
+            <h2 class="text-lg text-cyan-400 mb-4 border-b border-cyan-900 pb-2">Fragmentos</h2>
+            <div id="fragmentsContainer" class="grid grid-cols-3 gap-2 overflow-y-auto max-h-[600px] pr-2">
+                </div>
+        </div>
+
+        <div class="glass-panel p-4 rounded-lg">
+            <h2 class="text-lg text-cyan-400 mb-4 border-b border-cyan-900 pb-2">Mesa de Montagem</h2>
+            <div class="grid grid-cols-1 gap-2" id="calibrationMatrix">
+                </div>
+            <button onclick="renderPuzzle()" class="mt-4 bg-cyan-700 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded w-full transition-all border border-cyan-400">
+                RENDERIZAR
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-6">
+            <div class="glass-panel p-4 rounded-lg flex flex-col items-center">
+                <h2 class="text-lg text-cyan-400 w-full mb-4 border-b border-cyan-900 pb-2">Output Visual</h2>
+                <div class="bg-black p-1 rounded">
+                    <canvas id="renderCanvas" width="300" height="400"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-panel p-4 rounded-lg border-red-900/50">
+                <h2 class="text-lg text-red-400 mb-2 flex justify-between">
+                    <span>Cofre</span>
+                    <span class="text-sm font-mono text-gray-500" id="clockDisplay">00:00:00</span>
+                </h2>
+                <p class="text-xs text-gray-400 mb-4">
+                    Fechadura do tempo, só é possivel acessar na 23ª hora do sistema (23:00hs).
+                </p>
+                <div class="flex flex-col gap-2">
+                    <input type="text" id="pinInput" class="bg-black border border-gray-700 rounded px-4 py-2 text-white text-center tracking-[0.5em] focus:border-red-500 outline-none" placeholder="PIN DA IMAGEM">
+                    <button onclick="tryOpenVault()" class="bg-red-800 hover:bg-red-700 text-white font-bold py-2 rounded transition-all border border-red-500">
+                        DESBLOQUEAR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const VAULT_HASH = "U2FsdGVkX18kFRSGHPEdyPlvsM6a6dHYZPxRDNU2906zOTYoMPgWmhjQu4ru8FWZ0L5tRpl/rjhbWisCXifUnw==";
+
+        setInterval(() => {
+            document.getElementById('clockDisplay').innerText = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
+
+        const NUM_PIECES = 12; 
+        const COLS = 3;       
+        const ROWS = 4;        
+        const fragments = [];  
+        let loadedImages = 0;
+
+        function initApp() {
+            buildMatrixUI();
+            
+            const mainCanvas = document.getElementById('renderCanvas');
+            const mainCtx = mainCanvas.getContext('2d');
+            mainCtx.fillStyle = '#111'; mainCtx.fillRect(0,0,300,400);
+            mainCtx.fillStyle = '#06b6d4'; mainCtx.font = '14px Courier';
+            mainCtx.fillText("Aguardando Calibração...", 45, 200);
+        }
+
+        for(let i = 1; i <= NUM_PIECES; i++) {
+            let img = new Image();
+            img.src = `p${i}.webp`; 
+            
+            fragments.push(img);
+            
+            img.onload = () => { 
+                addFragmentToUI(img, i);
+                loadedImages++;
+                if(loadedImages === NUM_PIECES) {
+                    initApp();
+                }
+            };
+
+            img.onerror = () => {
+                console.error(`Falha ao carregar a imagem p${i}.webp`);
+                loadedImages++;
+                if(loadedImages === NUM_PIECES) initApp();
+            }
+        }
+
+        function addFragmentToUI(sourceElement, index) {
+            const container = document.getElementById('fragmentsContainer');
+            const div = document.createElement('div');
+            div.className = "flex flex-col items-center border border-gray-800 p-1 bg-black";
+            
+            const thumb = document.createElement('canvas');
+            thumb.width = 80; thumb.height = 80;
+            thumb.className = "w-full h-auto";
+            const tCtx = thumb.getContext('2d');
+            tCtx.drawImage(sourceElement, 0, 0, 80, 80);
+            
+            const label = document.createElement('span');
+            label.className = "text-xs mt-1 text-cyan-500 font-bold";
+            label.innerText = `Peça ${index}`;
+
+            div.appendChild(thumb);
+            div.appendChild(label);
+            container.appendChild(div);
+        }
+
+        function buildMatrixUI() {
+            const matrixDiv = document.getElementById('calibrationMatrix');
+            matrixDiv.innerHTML = ""; 
+
+            for(let i = 0; i < NUM_PIECES; i++) {
+                let row = document.createElement('div');
+                row.className = "flex items-center justify-between bg-black p-2 border border-gray-800 rounded text-sm";
+                
+                let posLabel = document.createElement('span');
+                posLabel.className = "text-gray-400 font-bold w-12";
+                posLabel.innerText = `Pos ${i+1}:`;
+
+                let pieceSelect = document.createElement('select');
+                pieceSelect.id = `piece_${i}`;
+                pieceSelect.className = "cyber-select flex-grow mx-2";
+                pieceSelect.innerHTML = `<option value="-1">Vazio</option>`;
+                for(let p = 1; p <= NUM_PIECES; p++) {
+                    pieceSelect.innerHTML += `<option value="${p-1}">Peça ${p}</option>`;
+                }
+
+                let rotSelect = document.createElement('select');
+                rotSelect.id = `rot_${i}`;
+                rotSelect.className = "cyber-select w-20";
+                rotSelect.innerHTML = `
+                    <option value="0">0º</option>
+                    <option value="90">90º</option>
+                    <option value="180">180º</option>
+                    <option value="270">270º</option>
+                `;
+
+                row.appendChild(posLabel);
+                row.appendChild(pieceSelect);
+                row.appendChild(rotSelect);
+                matrixDiv.appendChild(row);
+            }
+        }
+
+        function renderPuzzle() {
+            const mainCanvas = document.getElementById('renderCanvas');
+            const mainCtx = mainCanvas.getContext('2d');
+            
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+            let destW = mainCanvas.width / COLS;  
+            let destH = mainCanvas.height / ROWS; 
+
+            for(let i = 0; i < NUM_PIECES; i++) {
+                let pSelect = document.getElementById(`piece_${i}`);
+                if(!pSelect) continue;
+
+                let selectedPieceIndex = parseInt(pSelect.value);
+                let rotation = parseInt(document.getElementById(`rot_${i}`).value);
+
+                if(selectedPieceIndex !== -1) {
+                    let sourceImg = fragments[selectedPieceIndex];
+                    if(!sourceImg.complete || sourceImg.naturalWidth === 0) continue; 
+                    
+                    let targetX = (i % COLS) * destW;
+                    let targetY = Math.floor(i / COLS) * destH;
+
+                    mainCtx.save();
+                    mainCtx.translate(targetX + destW/2, targetY + destH/2);
+                    mainCtx.rotate(rotation * Math.PI / 180);
+                    mainCtx.drawImage(sourceImg, -destW/2, -destH/2, destW, destH);
+                    mainCtx.restore();
+                }
+            }
+
+            mainCtx.strokeStyle = "rgba(0, 255, 255, 0.2)";
+            mainCtx.beginPath();
+            for(let x = destW; x < mainCanvas.width; x += destW) { mainCtx.moveTo(x, 0); mainCtx.lineTo(x, mainCanvas.height); }
+            for(let y = destH; y < mainCanvas.height; y += destH) { mainCtx.moveTo(0, y); mainCtx.lineTo(mainCanvas.width, y); }
+            mainCtx.stroke();
+        }
+
+        function tryOpenVault() {
+            const pin = document.getElementById('pinInput').value.trim();
+            const currentHour = new Date().getHours(); 
+
+            if(pin === "") return;
+
+            if(currentHour !== 23) {
+                Swal.fire({
+                    title: 'FALHA DE SINCRONIZAÇÃO',
+                    text: `A engrenagem mecânica não encaixa. A hora do sistema lida foi ${currentHour}h. Retorne às 23:00.`,
+                    icon: 'error',
+                    background: '#1a1a24', color: '#fff', confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            let chaveMestra = pin + "23";
+
+            try {
+                let bytes = CryptoJS.AES.decrypt(VAULT_HASH, chaveMestra);
+                let textResult = bytes.toString(CryptoJS.enc.Utf8);
+
+                if(textResult.startsWith("VALID_KEY_")) {
+                    let finalFlag = textResult.replace("VALID_KEY_", "");
+                    Swal.fire({
+                        title: 'COFRE ABERTO',
+                        html: `<p class="mb-4 text-sm text-gray-300">Tempo e Código Sincronizados. A Flag é:</p><div class="bg-black p-3 text-red-500 font-mono text-xl select-all border border-red-500">${finalFlag}</div>`,
+                        icon: 'success',
+                        background: '#1a1a24', color: '#fff', confirmButtonColor: '#991b1b', allowOutsideClick: false
+                    });
+                } else {
+                    triggerWrongPin();
+                }
+            } catch(e) {
+                triggerWrongPin();
+            }
+        }
+
+        function triggerWrongPin() {
+            Swal.fire({
+                title: 'PIN INCORRETO',
+                text: 'O horário estava correto, mas a fechadura não girou. A imagem foi montada e lida corretamente?',
+                icon: 'warning',
+                background: '#1a1a24', color: '#fff', confirmButtonColor: '#eab308'
+            });
+        }
+    </script>
+</body>
+</html>
