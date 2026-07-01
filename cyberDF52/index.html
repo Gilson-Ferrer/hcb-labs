@@ -112,8 +112,16 @@
     </nav>
 
     <div class="w-full max-w-7xl mx-auto px-6 mb-12 text-center mt-8">
-        <h2 class="text-4xl md:text-5xl font-bold text-white mb-4" style="text-shadow: 0 0 20px rgba(255,255,255,0.1);">HARDWARE CLASSE 3</h2>
+        <h2 class="text-4xl md:text-5xl font-bold text-white mb-4" style="text-shadow: 0 0 20px rgba(255,255,255,0.1);">CYBERDECKs CLASSE 3</h2>
         <p class="text-gray-400 max-w-2xl mx-auto text-lg leading-relaxed">Conexões P2P criptografadas, NÃO RASTREÁVEL. Selecione o seu equipamento abaixo.</p>
+        <div class="mt-8 inline-flex items-center gap-3 bg-cyan-900/20 border border-cyan-500/30 rounded-full px-6 py-2 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+            <svg class="w-4 h-4 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-cyan-300 font-medium text-sm tracking-widest uppercase">
+                Cupons de desconto de <span class="text-white font-bold">25%, 50%, 75% e 100%</span> disponíveis nos jornais locais.
+            </span>
+        </div>
     </div>
 
     <div class="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="catalogGrid">
@@ -174,13 +182,7 @@
 
     <script>
 
-        // maquina kiroshi
-        // root: ar89ko
-        // braidshadow:tr547fa
-        // ==============================================================
-        // O HASH DO ARQUIVO .OVA
-        // ==============================================================
-        const DATABASE_HASH = "U2FsdGVkX18i8omzpWMQzd2UanFrT7gG4LtcS9uxl49K2GtcLcs6xzyFjgGZU34zQh1jjMEwfSswroW3D3ffTi70Dr87J+sNn1HLiXBybusM+KwfoeEA13DR5QEFEDB2"; 
+        const DATABASE_HASH = "U2FsdGVkX19l1k18tuXAHsVqHaHZx63307kl53H9qmzgQZwJuzM6QkMEdT/+WigQGJ6htPVZxGIrUagcDjNsTtiYpzI6vbvwTyLGb2i7qeUFiEja9SiF3eabb77LUMPVAIiU3dwM0CdXUkGluM64GQ=="; 
         const SECRET_COUPON_HASH = "0552ceb52145ca4dff3a493295dda77843cc38ea58d5e5cc941bb14b641dbcaf";
 
         setInterval(() => {
@@ -452,7 +454,7 @@
         function triggerGenericSuccess() {
             closeModal();
 
-            const linkMaquinaGenerica = "https://asyncx.com.br/arquivos/maquina_padrao.ova";
+            const linkMaquinaGenerica = "https://drive.google.com/file/d/1D64kDA3IJFfWRbFZgG2KbLHTFPWMLCAf/view?usp=sharing";
 
             Swal.fire({
                 title: 'TRANSAÇÃO CONCLUÍDA',

@@ -38,9 +38,22 @@
             background-color: #1d4ed8;
             box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
         }
+
+        @media print {
+            html, body {
+                display: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+            }
+        }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 select-none" 
+      oncontextmenu="return false" 
+      oncopy="return false" 
+      oncut="return false" 
+      onpaste="return false"
+      ondragstart="return false">
 
     <div class="fixed inset-0 bg-black/40 z-0"></div>
 
@@ -171,6 +184,45 @@
             });
         }
         loadQuestion();
+
+        document.addEventListener('keydown', function(e) {
+
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+                (e.ctrlKey && e.key === 'U')) {
+                e.preventDefault();
+                return false;
+            }
+
+            if ((e.ctrlKey && e.key === 'c') || 
+                (e.ctrlKey && e.key === 'a') || 
+                (e.ctrlKey && e.key === 'p') || 
+                (e.ctrlKey && e.key === 's')) {
+                e.preventDefault();
+                return false;
+            }
+
+            if (e.key === 'PrintScreen') {
+                navigator.clipboard.writeText('Tentativa de cópia registrada.');
+                document.body.style.opacity = '0';
+                setTimeout(() => { document.body.style.opacity = '1'; }, 1500);
+            }
+        });
+
+        window.addEventListener('blur', function() {
+            // Deixa tudo invisível instantaneamente
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'none';
+        });
+
+        window.addEventListener('focus', function() {
+            document.body.style.opacity = '1';
+        });
+
+        window.addEventListener('copy', function(e) {
+            e.preventDefault();
+            e.clipboardData.setData('text/plain', 'Acesso Negado: Cópia de material confidencial bloqueada.');
+        });
     </script>
 </body>
 </html>
