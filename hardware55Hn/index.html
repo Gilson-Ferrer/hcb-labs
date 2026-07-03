@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Restrito | Icarus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #050505;
+            color: #10b981;
+            font-family: 'Share Tech Mono', monospace;
+            background-image: 
+                linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow: hidden;
+        }
+
+        .terminal-box {
+            background: rgba(5, 15, 10, 0.9);
+            border: 1px solid #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2), inset 0 0 20px rgba(16, 185, 129, 0.1);
+            position: relative;
+        }
+
+        .terminal-box::before {
+            content: ''; position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, #10b981, transparent, #0ea5e9, transparent, #10b981);
+            z-index: -1; filter: blur(10px); opacity: 0.3;
+        }
+
+        .binary-input {
+            background: #000;
+            border: 2px solid #064e3b;
+            color: #10b981;
+            font-size: 2rem;
+            letter-spacing: 0.2em;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .binary-input:focus { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
+        
+        .scanline {
+            width: 100%; height: 100vh; position: fixed; z-index: 50; pointer-events: none;
+            background: linear-gradient(0deg, transparent 0%, rgba(16, 185, 129, 0.1) 50%, transparent 100%);
+            animation: scan 6s linear infinite;
+        }
+        @keyframes scan { 0% { top: -100vh; } 100% { top: 100vh; } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="scanline"></div>
+
+    <div class="terminal-box w-full max-w-2xl p-8 md:p-12 text-center rounded-lg z-10">
+        
+        <div class="mb-8">
+            <svg class="w-16 h-16 mx-auto text-cyan-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+            <h1 class="text-3xl md:text-4xl font-bold text-white tracking-widest uppercase mb-2">Interface <span class="text-cyan-400">IoT</span> Gate</h1>
+            <p class="text-green-600 text-sm">Sistema Ativo. Aguardando inicialização.</p>
+        </div>
+
+        <div id="resultContainer" class="hidden mb-8">
+            </div>
+
+        <div id="inputSection">
+            <div class="mb-2 flex justify-between text-xs text-gray-500">
+                <span>INPUT BINÁRIO (24-BIT)</span>
+                <span id="charCount">0/24</span>
+            </div>
+            
+            <input type="text" id="binInput" class="binary-input w-full p-4 rounded mb-6 font-bold" maxlength="24" placeholder="000000000000000000000000" autocomplete="off" spellcheck="false">
+
+            <button onclick="attemptDecryption()" id="btnDecode" class="w-full bg-green-900 hover:bg-green-700 text-green-300 hover:text-white border border-green-500 py-4 font-bold tracking-widest uppercase transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                AUTENTICAR
+            </button>
+        </div>
+
+        <div class="mt-8 text-xs text-gray-600 border-t border-gray-800 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <span class="tracking-widest">SYS: ACESSO RESTRITO</span>
+            
+            <button onclick="openManifesto()" class="flex items-center gap-2 text-cyan-500 hover:text-cyan-300 transition-colors border border-cyan-900/50 hover:border-cyan-500 bg-cyan-900/10 px-4 py-2 rounded cursor-pointer group">
+                <svg class="w-4 h-4 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                MANIFESTO
+            </button>
+        </div>
+    </div>
+
+    <div id="manifestoModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="relative max-w-4xl w-full p-4 flex flex-col items-center">
+            
+            <button onclick="closeManifesto()" class="absolute -top-6 right-4 md:-right-8 text-cyan-500 hover:text-white bg-black/50 hover:bg-red-500 border border-cyan-900 hover:border-red-500 rounded-full w-10 h-10 flex items-center justify-center transition-all z-10 shadow-[0_0_15px_rgba(0,0,0,0.8)]">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <img src="../assets/manifesto-hacker_hardware55Hn.webp" alt="Fragmento de Papel" class="max-h-[85vh] object-contain drop-shadow-[0_0_25px_rgba(6,182,212,0.15)] transform transition-transform hover:scale-[1.02] duration-500">
+            
+            <p class="text-cyan-500/50 text-xs mt-4 tracking-widest font-mono uppercase animate-pulse">Varredura Concluída</p>
+        </div>
+    </div>
+
+    <script>
+
+        const ENCRYPTED_QR = "U2FsdGVkX1+1K6bq613EQimU665NYskxptWFUKMT/NbIme+dM0gl17d6l2bgph2Oj2d60zkuWVRsnOuETik4RKdIj6Z2kNAD9Cq/hv0Vdzgh0NOBnO4/LlHZHx1uxyCfkocKz/FLuPPtIi+hXUF6RDowz+jXn9EKaPh0EQH6188g4c73gw1TXH4F2Ep8D7O3vL0naPFHtAVvWcT1g1p6eX9+XdBM9NCD/90mbfjiBsjPoJlEVHADLYalfhV+vUTAudl7HPtzRJbpa2jDTwKaXq5obMRGxRMhXmUs7iF70KiDqCr6zZ6DWWW/PyhsYvYDNuuIMVdKGajmx6tMdxdF9xf0enPDGDa7b1KbmJsjhP46WuTwAznHG2VvlGmKA0cH6UB/VSo4s9OPTAKt7XIoN4QcKJMsFgdKrRyBDWKfeIBNjXqPuzWjL+fLF6KflVmj";
+
+        const input = document.getElementById('binInput');
+        const btn = document.getElementById('btnDecode');
+        const count = document.getElementById('charCount');
+
+        input.addEventListener('input', function(e) {
+
+            this.value = this.value.replace(/[^01]/g, '');
+            
+            let len = this.value.length;
+            count.innerText = `${len}/24`;
+
+            btn.disabled = len !== 24;
+            if(len === 24) {
+                btn.classList.add('shadow-[0_0_15px_rgba(16,185,129,0.5)]');
+            } else {
+                btn.classList.remove('shadow-[0_0_15px_rgba(16,185,129,0.5)]');
+            }
+        });
+
+        function attemptDecryption() {
+            const attemptKey = input.value;
+            if(attemptKey.length !== 24) return;
+
+            try {
+                let bytes = CryptoJS.AES.decrypt(ENCRYPTED_QR, attemptKey);
+                let htmlResult = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (htmlResult && htmlResult.includes("<img")) {
+
+                    document.getElementById('inputSection').style.display = 'none';
+                    const resContainer = document.getElementById('resultContainer');
+                    resContainer.innerHTML = htmlResult;
+                    resContainer.classList.remove('hidden');
+
+                    Swal.fire({
+                        title: 'ACESSO CONCEDIDO',
+                        text: 'Binário correto. Sincronização com o simulador autorizada.',
+                        icon: 'success',
+                        background: '#050505', color: '#10b981', confirmButtonColor: '#0ea5e9'
+                    });
+                } else {
+                    triggerError();
+                }
+            } catch (e) {
+                triggerError();
+            }
+        }
+
+        function triggerError() {
+            input.value = "";
+            count.innerText = "0/24";
+            btn.disabled = true;
+            btn.classList.remove('shadow-[0_0_15px_rgba(16,185,129,0.5)]');
+
+            Swal.fire({
+                title: 'FALHA',
+                text: 'A sequência binária está incorreta.',
+                icon: 'error',
+                background: '#050505', color: '#ef4444', confirmButtonColor: '#dc2626'
+            });
+        }
+
+        const modalManifesto = document.getElementById('manifestoModal');
+
+        function openManifesto() {
+            modalManifesto.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeManifesto() {
+            modalManifesto.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        modalManifesto.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeManifesto();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modalManifesto.classList.contains('opacity-0')) {
+                closeManifesto();
+            }
+        });
+    </script>
+</body>
+</html>
