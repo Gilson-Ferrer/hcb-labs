@@ -81,7 +81,7 @@
             }
 
             if (!elEmail.includes('@proton.me')) {
-                mostrarErro("Provedor de e-mail não homologado. Utilize uma conta @proton.me para continuar.");
+                mostrarErro("Provedor de e-mail não homologado.");
                 return;
             }
 
@@ -103,7 +103,7 @@
                 msgSucesso.innerHTML = `
                     <strong>Integração Concluída!</strong><br><br>
                     O seu contrato de acesso foi gerado. <br><br>
-                    <em>Nota do Sistema:</em> Devido a uma falha no renderizador PDF do nosso portal, o documento não pode ser exibido aqui...<br><br>
+                    <em>Nota do Sistema:</em> Devido a uma falha no renderizador PDF do nosso portal, o documento não pode ser exibido aqui... Talvez ele precise ser convertido.<br><br>
                     <a href="${linkFinal}" class="link-download" target="_blank">Acessar Documento de Onboarding</a>
                 `;
                 msgSucesso.style.display = 'block';
