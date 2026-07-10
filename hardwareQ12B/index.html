@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titanium Nodes - Intranet (Legacy)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+
+        body { font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif; background-color: #008080; color: #000; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        .window { background-color: #c0c0c0; border: 2px solid; border-color: #dfdfdf #0a0a0a #0a0a0a #dfdfdf; box-shadow: 2px 2px 0px rgba(0,0,0,0.5); width: 600px; max-width: 95%; position: relative; }
+        .title-bar { background-color: #000080; color: #fff; padding: 4px 8px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .title-bar-controls button { background: #c0c0c0; border: 2px solid; border-color: #dfdfdf #000 #000 #dfdfdf; font-weight: bold; font-size: 12px; cursor: pointer; padding: 0 4px; }
+        .title-bar-controls button:active { border-color: #000 #dfdfdf #dfdfdf #000; }
+        
+        .content { padding: 15px; }
+        .menu-bar { display: flex; gap: 10px; border-bottom: 2px groove #dfdfdf; padding-bottom: 10px; margin-bottom: 15px; }
+        .btn-retro { background-color: #c0c0c0; border: 2px solid; border-color: #dfdfdf #0a0a0a #0a0a0a #dfdfdf; padding: 6px 12px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: bold; text-decoration: none; color: #000; display: inline-flex; align-items: center; }
+        .btn-retro:active { border-color: #0a0a0a #dfdfdf #dfdfdf #0a0a0a; padding: 7px 11px 5px 13px; /* efeito de clique */ }
+        .btn-retro img { margin-right: 5px; }
+        
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { font-size: 13px; margin-bottom: 4px; font-weight: bold; }
+        .form-group input { padding: 4px; border: 2px solid; border-color: #0a0a0a #dfdfdf #dfdfdf #0a0a0a; background: #fff; font-family: 'Courier New', Courier, monospace; font-size: 14px; text-transform: uppercase; }
+        .form-group input:focus { outline: none; background: #e8f4ff; }
+
+        .modal-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 10; }
+        .modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; z-index: 20; }
+        .modal .content { background: #fff; border: 2px inset #dfdfdf; margin: 10px; padding: 15px; font-size: 13px; line-height: 1.5; max-height: 300px; overflow-y: auto; }
+        
+        .alert-box { background: #fff; border: 2px solid; border-color: #0a0a0a #dfdfdf #dfdfdf #0a0a0a; padding: 10px; margin-top: 15px; display: none; display: flex; gap: 10px; align-items: center;}
+        .alert-icon { font-size: 24px; color: red; font-weight: bold; }
+        .success-icon { font-size: 24px; color: green; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="window">
+        <div class="title-bar">
+            <span>Titanium Nodes - Intranet de Compras v3.11</span>
+            <div class="title-bar-controls">
+                <button aria-label="Minimize">_</button>
+                <button aria-label="Maximize">□</button>
+                <button aria-label="Close">X</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="menu-bar">
+                <button class="btn-retro" onclick="abrirMensagens()">
+                    ✉️ Mensagens (1)
+                </button>
+                <a href="https://labs.asyncx.com.br/assets/compras_hardwareQ12B.pdf" target="_blank" class="btn-retro">
+                    📁 Catálogo PDF
+                </a>
+            </div>
+
+            <p style="font-size: 13px; border-bottom: 1px solid #888; padding-bottom: 5px; margin-bottom: 15px;">
+                Preencha o formulário abaixo com os códigos SKU exatos para submeter a requisição ao setor de compras.
+            </p>
+
+            <form id="bom-form" onsubmit="event.preventDefault(); submeterRequisicao();">
+                <div class="form-group">
+                    <label>SKU - PROCESSADOR (CPU):</label>
+                    <input type="text" id="sku_cpu" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU - PLACA-MÃE (MB):</label>
+                    <input type="text" id="sku_mb" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU - MEMÓRIA RAM (Para todos os canais):</label>
+                    <input type="text" id="sku_ram" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU - PLACA ACELERADORA (GPU):</label>
+                    <input type="text" id="sku_gpu" required>
+                </div>
+                <div class="form-group">
+                    <label>SKU - FONTE DE ALIMENTAÇÃO (PSU):</label>
+                    <input type="text" id="sku_psu" required>
+                </div>
+
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="submit" class="btn-retro" style="font-size: 14px; padding: 8px 16px;">💾 Submeter Requisição</button>
+                </div>
+            </form>
+
+            <div id="alert-box" class="alert-box" style="display: none;">
+                <div class="alert-icon">❌</div>
+                <div id="alert-text" style="font-size: 12px; font-weight: bold;">Erro de incompatibilidade.</div>
+            </div>
+            
+            <div id="success-box" class="alert-box" style="display: none; background: #e8fce8;">
+                <div class="success-icon">✅</div>
+                <div id="success-text" style="font-size: 13px; font-weight: bold; word-break: break-all;"></div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-overlay"></div>
+        <div class="window modal" id="modal-msg">
+            <div class="title-bar">
+                <span>Caixa de Entrada (1 Não Lida)</span>
+                <div class="title-bar-controls">
+                    <button onclick="fecharMensagens()">X</button>
+                </div>
+            </div>
+            <div class="content">
+                <strong>De:</strong> m.almeida@titaniumnodes.corp (Engenheiro Chefe)<br>
+                <strong>Para:</strong> novo.arquiteto@titaniumnodes.corp<br>
+                <strong>Assunto:</strong> URGENTE: Erro no Cluster de IA<br>
+                <hr>
+                <p>Bem-vindo à equipe. O colaborador anterior encomendou as peças erradas. Precisamos que abra o Catálogo em PDF e submeta a requisição correta imediatamente.</p>
+                <p><strong>Requisitos:</strong></p>
+                <ul>
+                    <li><strong>Processador:</strong> Precisamos de exatos 64 Cores no formato Socket LGA-4189.</li>
+                    <li><strong>Motherboard:</strong> Tem de ser obrigatoriamente Dual-Socket para esse mesmo LGA-4189.</li>
+                    <li><strong>Memória:</strong> Usa pentes LRDIMM de 32GB com correção de erro ECC. A regra da empresa exige preencher todos os 8 canais de <strong>CADA</strong> processador para máxima performance. Calcula bem a quantidade ou o sistema rejeitará.</li>
+                    <li><strong>Acelerador (GPU):</strong> Precisamos do modelo focado em Inteligência Artificial Tensor que consome 300W.</li>
+                    <li><strong>Energia:</strong> Soma o consumo máximo total (2 CPUs de 250W + 4 GPUs de 300W + Motherboard de 150W). Para não queimar nada, a política térmica dita que a Fonte deve suportar essa carga total trabalhando a <strong>80% da sua capacidade máxima</strong>. Descobre qual é o SKU correto.</li>
+                </ul>
+                <p>O orçamento depende desta submissão.</p>
+            </div>
+            <div style="text-align: center; padding-bottom: 15px;">
+                <button class="btn-retro" onclick="fecharMensagens()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const HASH_SISTEMA = "Ax2PdIr7OUuEvSlYjbjnoWO/IMJU8EwYqfIXWNMy35XOcPumTfxf52VCfDVuljTl";
+
+        function abrirMensagens() {
+            document.getElementById('modal-overlay').style.display = 'block';
+            document.getElementById('modal-msg').style.display = 'block';
+        }
+
+        function fecharMensagens() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('modal-msg').style.display = 'none';
+        }
+
+        function submeterRequisicao() {
+            const cpu = document.getElementById('sku_cpu').value.trim().toUpperCase();
+            const mb = document.getElementById('sku_mb').value.trim().toUpperCase();
+            const ram = document.getElementById('sku_ram').value.trim().toUpperCase();
+            const gpu = document.getElementById('sku_gpu').value.trim().toUpperCase();
+            const psu = document.getElementById('sku_psu').value.trim().toUpperCase();
+            
+            const alertBox = document.getElementById('alert-box');
+            const alertText = document.getElementById('alert-text');
+            const successBox = document.getElementById('success-box');
+            const successText = document.getElementById('success-text');
+            
+            alertBox.style.display = 'none';
+            successBox.style.display = 'none';
+
+            const chaveCandidata = `${cpu}_${mb}_${ram}_${gpu}_${psu}`;
+
+            try {
+
+                const keyHex = CryptoJS.SHA256(chaveCandidata);
+                const decrypted = CryptoJS.AES.decrypt(HASH_SISTEMA, keyHex, {
+                    mode: CryptoJS.mode.ECB,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+                const obj = JSON.parse(decryptedText);
+
+                if (obj && obj.valid === true) {
+                    document.getElementById('bom-form').style.display = 'none';
+                    successText.innerHTML = `ORÇAMENTO APROVADO.<br><br>Flag do Sistema:<br><span style="color: #000080; font-family: monospace;">${obj.flag}</span>`;
+                    successBox.style.display = 'flex';
+                } else {
+                    throw new Error("Invalid payload");
+                }
+
+            } catch (e) {
+                alertText.innerHTML = "REJEITADO: Incompatibilidade de Hardware detectada ou Cálculo de Energia Incorreto.";
+                alertBox.style.display = 'flex';
+            }
+        }
+    </script>
+</body>
+</html>
