@@ -1,0 +1,9 @@
+=======================================================
+HWS CLOUD - NOTA DE INFRAESTRUTURA
+=======================================================
+
+Atenção: Não esquecer de remover este ficheiro de backup após concluir a migração dos servidores.
+
+Para evitar vazamentos em texto claro, a senha do cofre foi encriptada utilizando o algoritmo legado MD5, use Crackstation.
+
+Hash MD5: 6eea9b7ef19179a06954edd0f6c05ceb

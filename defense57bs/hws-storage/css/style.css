@@ -1,0 +1,33 @@
+/* QeraBit Analytics - Main Stylesheet */
+/* Compiled on: 2024-03-12 10:15 UTC via WebPack */
+:root { 
+    --primary-blue: #58a6ff; 
+    --bg-dark: #0b0f19; 
+    --text-muted: #8b949e;
+}
+body, html { 
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+    background-color: var(--bg-dark); 
+    color: #ffffff; 
+    margin: 0; 
+    padding: 0; 
+}
+.hero-container { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    min-height: 100vh; 
+}
+/* TODO (Marcos): O padding do mobile tá quebrando a tela no iPhone. Arrumar isso antes do deploy de sexta! */
+.btn-download { 
+    background: #238636; 
+    border: 1px solid rgba(240, 246, 252, 0.1); 
+    padding: 12px 24px; 
+    border-radius: 6px; 
+    text-decoration: none; 
+    color: white; 
+    font-weight: 600; 
+    transition: 0.2s ease-in;
+}
+.btn-download:hover { background: #2ea043; }
+.hidden-debug-panel { display: none !important; }
